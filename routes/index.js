@@ -66,7 +66,33 @@ router.post(`${baseUrl}/login`, (req, res) => {
 // 更新用户信息的路由
 router.post(`${baseUrl}/update`, (req, res) => {
   const userid = req.cookies.userid
+  if (!userid) {
+    return res.send({code: 1, msg: '请先登录！'})
+  }
+
   const user = req.body
+  UserModel.findByIdAndUpdate({_id: userid}, user, (err, oldUser) => {
+    const {_id, username, type} = oldUser
+    const data = Object.assign({_id, username, type}, user)
+    if (!oldUser) {
+      res.clearCookie('userid')
+      res.send({code: 1, msg: '请先登录！'})
+    } else {
+      res.send({code: 0, data})
+    }
+  })
+})
+
+// 获取用户的信息，同构浏览器中的cookie中的userid
+router.get(`${baseUrl}/user`, (req, res) => {
+  // 从请求的cookie中得到userid
+  const userid = req.cookies.userid
+  if (!userid) {
+    return res.send({code: 1, msg: '请先登录！'})
+  }
+  UserModel.findOne({_id: userid}, {password: 0, __v: 0}, (err, user) => {
+    res.send({code: 0, data: user})
+  })
 })
 
 module.exports = router;
